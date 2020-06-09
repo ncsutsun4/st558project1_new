@@ -61,20 +61,22 @@ Pull down data.
 ```{r retrieve_tables}
 franchise <- get_franchise("franchise")
 team_totals <- get_franchise("franchise-team-totals")
-season_records <- get_franchise("franchise-season-records", 1)
-goalie_records <- get_franchise("franchise-goalie-records", 1)
-skater_records <- get_franchise("franchise-skater-records", 1)
 ```
 
 # **Exploratory data analysis**
-
+Cities with more than one NHL teams in the history
 ```{r}
+# select active teams and summary data
 team_info <- franchise %>% filter(is.na(lastSeasonId)) %>% 
                            select(id, firstSeasonId, teamCommonName, teamPlaceName) 
-datatable(team_info, 
-          rownames=NULL, 
-          colnames=c("Franchise ID","First Season","Team Name","Team City"),
-          caption = "Current NHL teams")
+teamN <- franchise %>% group_by(teamPlaceName) %>% summarize(n=n())%>% arrange(desc(n)) %>% filter(n>1) %>% rename(`City Name`=teamPlaceName, `Team Number`=n)
+kable(teamN)
+
+# Commented out for knit reason;
+#datatable(team_info, 
+#          rownames=NULL, 
+#          colnames=c("Franchise ID","First Season","Team Name","Team City"),
+#          caption = "Current NHL teams")
 ```
 
 # **The team with highest winning ratio in NHL history**
@@ -102,9 +104,9 @@ regular_season <- team_totals %>% mutate(ratio = round(wins/gamesPlayed,2)) %>% 
 
 playoffs <- team_totals %>% mutate(ratio = round(wins/gamesPlayed,2)) %>% filter(gameTypeId=="Playoffs") %>% arrange(desc(ratio)) %>% select(teamName, franchiseId, gamesPlayed, wins, ratio)
 
-datatable(regular_season, caption="Winning rato in regular seasons", rownames=NULL, colnames = c("Franchise ID", "Team Name", "Number of games played", "Number of games wined"))
+kable(head(regular_season, 4), caption="Winning rato in regular seasons", rownames=NULL, colnames = c("Franchise ID", "Team Name", "Number of games played", "Number of games wined"))
 
-datatable(playoffs, caption="Winning rato in regular seasons",rownames=NULL, colnames = c("Franchise ID", "Team Name", "Number of games played", "Number of games wined"))
+kable(head(playoffs,4), caption="Winning rato in regular seasons",rownames=NULL, colnames = c("Franchise ID", "Team Name", "Number of games played", "Number of games wined"))
 ```
 
 
@@ -113,6 +115,10 @@ datatable(playoffs, caption="Winning rato in regular seasons",rownames=NULL, col
 Seems that Montreal Canadiens need more player on the right wing position.
 
 ```{r}
+season_records <- get_franchise("franchise-season-records", 1)
+goalie_records <- get_franchise("franchise-goalie-records", 1)
+skater_records <- get_franchise("franchise-skater-records", 1)
+
 tbl <-table(skater_records$activePlayer, skater_records$positionCode)
 rownames(tbl) <- c("Former player", "Current player")
 colnames(tbl) <- c("Center", "Defence", "Left Wing", "Right Wing")
